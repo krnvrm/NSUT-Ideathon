@@ -11,6 +11,7 @@ const Navbar: React.FC = () => {
     { name: 'Market Linkage', path: '/market-linkage' },
     { name: 'Technology Hub', path: '/technology' },
     { name: 'ONDC Academy', path: '/ondc-academy' }, // ✅ Added new tab here
+    { name: 'Clusters', path: '/cluster' },
     { name: 'About Us', path: '/about' },
     { name: 'Contact', path: '/contact' },
   ];

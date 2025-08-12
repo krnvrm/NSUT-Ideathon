@@ -7,6 +7,7 @@ import FinanceHub from './pages/FinanceHub';
 import MarketLinkage from './pages/MarketLinkage';
 import TechnologyHub from './pages/TechnologyHub';
 import Ondc from './pages/Ondc';
+import Cluster from './pages/Cluster';
 import AboutUs from './pages/AboutUs';
 import ContactUs from './pages/ContactUs';
 import SearchResults from './pages/SearchResults';
@@ -24,6 +25,7 @@ function App() {
           <Route path="/technology" element={<TechnologyHub />} />
           <Route path="/about" element={<AboutUs />} />
           <Route path="/ondc-academy" element={<Ondc />} />
+          <Route path="/cluster" element={<Cluster />} />
           <Route path="/contact" element={<ContactUs />} />
           <Route path="/search-results" element={<SearchResults />} />
         </Routes>
