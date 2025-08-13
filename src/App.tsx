@@ -8,7 +8,7 @@ import MarketLinkage from './pages/MarketLinkage';
 import TechnologyHub from './pages/TechnologyHub';
 import Ondc from './pages/Ondc';
 import Cluster from './pages/Cluster';
-import UaaS from './pages/uaaS';
+import UaaS from './pages/Uaas';
 import AboutUs from './pages/AboutUs';
 import ContactUs from './pages/ContactUs';
 import SearchResults from './pages/SearchResults';
