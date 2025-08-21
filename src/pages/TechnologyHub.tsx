@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { Smartphone, Monitor, CreditCard, ChevronDown, ChevronUp, CheckCircle, Star } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Smartphone, Monitor, CreditCard, ChevronDown, ChevronUp, CheckCircle, Star, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
-// TechnologyHub — Consistent with GoI-style Navbar/Homepage/Finance/Market
-// - Listens to Navbar events: gov-ui:lang / gov-ui:contrast / gov-ui:font-step
-// - Conservative NIC-ish palette; rounded-2xl cards, border shadows
-// - EN/HI i18n via lightweight t() map
-// - Accessibility: labels, aria-live for result, focusable controls
+// TechnologyHub — Refactored with Step Slider, Progress, Animated Score Ring
+// - Step-by-step questionnaire with Next/Back + linear progress
+// - Animated circular readiness score (0→score) with SVG ring
+// - Outcome modal based on thresholds: <20, 20–60, >60
+// - Keeps your EN/HI i18n, contrast, font-step, palette, accessibility
 // ---------------------------------------------------------------------------
 
 interface AssessmentData {
@@ -49,6 +49,17 @@ const TechnologyHub: React.FC = () => {
   const [lang, setLang] = useState<'en' | 'hi'>('en');
   const [contrast, setContrast] = useState(false);
   const [fontStep, setFontStep] = useState<-1 | 0 | 1>(0);
+
+  // Step slider state
+  const questionKeys = useMemo<(keyof AssessmentData)[]>(() => [
+    'currentSystems', 'digitalPresence', 'paymentMethods', 'dataManagement', 'automation'
+  ], []);
+  const totalQuestions = questionKeys.length;
+  const [currentStep, setCurrentStep] = useState<number>(0);
+
+  // Score animation
+  const [animatedScore, setAnimatedScore] = useState<number>(0);
+  const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
     const onFont = (e: any) => setFontStep(e.detail?.fontStep ?? 0);
@@ -97,7 +108,10 @@ const TechnologyHub: React.FC = () => {
         q5b: 'Some automated reporting and notifications',
         q5c: 'Basic automated calculations',
         q5d: 'All manual processes',
+        btnNext: 'Next',
+        btnBack: 'Back',
         btnScore: 'Get My Digital Score',
+        progress: 'Progress',
         scoreH: 'Your Digital Score',
         nextSteps: 'Recommended Next Steps:',
         solutionsH: 'Technology Solutions',
@@ -106,6 +120,17 @@ const TechnologyHub: React.FC = () => {
         consult: 'Get a Free Consultation',
         integrations: 'See Integrations',
         completePrompt: 'Complete the assessment to see your digital readiness score',
+        // Modal CTA text
+        modalLowH: 'Visit a SAKSHAM Help Center',
+        modalLowB: 'Your score suggests you’ll benefit from in-person assistance. Our offline SAKSHAM Help Centers can guide you end to end.',
+        modalMidH: 'Take Guided SAKSHAM Registration',
+        modalMidB: 'Great start! Proceed with guided registration and we’ll walk you through each step.',
+        modalHighH: 'Continue Online, You’re Ready!',
+        modalHighB: 'You have strong readiness. You can complete the journey online at your own pace.',
+        modalFindCenter: 'Find Help Center',
+        modalStartGuided: 'Start Guided Registration',
+        modalContinue: 'Continue Online',
+        close: 'Close',
       },
       hi: {
         titleA: 'टेक्नोलॉजी हब',
@@ -119,7 +144,7 @@ const TechnologyHub: React.FC = () => {
         q1c: 'स्प्रेडशीट व मैनुअल ट्रैकिंग',
         q1d: 'केवल कागज़ी प्रक्रियाएँ',
         q2: 'आपकी डिजिटल उपस्थिति कितनी मज़बूत है?',
-        q2a: 'ई‑कॉमर्स व SEO सहित प्रोफ़ेशनल वेबसाइट',
+        q2a: 'ई-कॉमर्स व SEO सहित प्रोफ़ेशनल वेबसाइट',
         q2b: 'बेसिक वेबसाइट व सोशल मीडिया',
         q2c: 'केवल सोशल मीडिया अकाउंट्स',
         q2d: 'कोई ऑनलाइन उपस्थिति नहीं',
@@ -129,16 +154,19 @@ const TechnologyHub: React.FC = () => {
         q3c: 'केवल नकद व चेक',
         q3d: 'केवल नकद',
         q4: 'आप ग्राहक व व्यवसाय डेटा कैसे प्रबंधित करते हैं?',
-        q4a: 'एनालिटिक्स सहित क्लाउड‑आधारित CRM',
+        q4a: 'एनालिटिक्स सहित क्लाउड-आधारित CRM',
         q4b: 'डिजिटल डेटाबेस व बेसिक ट्रैकिंग',
         q4c: 'एक्सेल शीट्स व बेसिक डिजिटल फ़ाइलें',
         q4d: 'केवल कागज़ी रिकॉर्ड',
         q5: 'आपके यहाँ प्रक्रिया ऑटोमेशन का स्तर क्या है?',
-        q5a: 'ऑटोमेटेड वर्कफ़्लो व एआई‑संचालित प्रक्रियाएँ',
+        q5a: 'ऑटोमेटेड वर्कफ़्लो व एआई-संचालित प्रक्रियाएँ',
         q5b: 'कुछ ऑटो रिपोर्टिंग व नोटिफ़िकेशन',
         q5c: 'बेसिक ऑटोमेटेड कैलकुलेशन्स',
         q5d: 'सभी प्रक्रियाएँ मैनुअल',
+        btnNext: 'आगे',
+        btnBack: 'वापस',
         btnScore: 'मेरा डिजिटल स्कोर देखें',
+        progress: 'प्रगति',
         scoreH: 'आपका डिजिटल स्कोर',
         nextSteps: 'अनुशंसित अगले कदम:',
         solutionsH: 'टेक्नोलॉजी समाधान',
@@ -147,6 +175,16 @@ const TechnologyHub: React.FC = () => {
         consult: 'नि:शुल्क परामर्श लें',
         integrations: 'इंटीग्रेशन देखें',
         completePrompt: 'डिजिटल रेडीनेस स्कोर देखने के लिए आकलन पूरा करें',
+        modalLowH: 'SAKSHAM हेल्प सेंटर जाएँ',
+        modalLowB: 'आपके स्कोर के अनुसार ऑफ़लाइन सहायता उपयोगी रहेगी। हमारे SAKSHAM हेल्प सेंटर पूरी मदद करेंगे।',
+        modalMidH: 'गाइडेड SAKSHAM रजिस्ट्रेशन लें',
+        modalMidB: 'अच्छी शुरुआत! गाइडेड रजिस्ट्रेशन के साथ हम हर चरण में साथ चलेंगे।',
+        modalHighH: 'ऑनलाइन जारी रखें, आप तैयार हैं!',
+        modalHighB: 'आपकी तैयारी मज़बूत है। आप अपनी गति से ऑनलाइन पूरी प्रक्रिया कर सकते हैं।',
+        modalFindCenter: 'हेल्प सेंटर खोजें',
+        modalStartGuided: 'गाइडेड रजिस्ट्रेशन शुरू करें',
+        modalContinue: 'ऑनलाइन जारी रखें',
+        close: 'बंद करें',
       },
     };
     return dict[lang][k];
@@ -194,9 +232,10 @@ const TechnologyHub: React.FC = () => {
     },
   ];
 
-  const calcScore = () => {
+  // Calculate score + result
+  const computeScore = (data: AssessmentData) => {
     let score = 0;
-    const vals = Object.values(assessmentData);
+    const vals = Object.values(data);
     for (const v of vals) {
       if (v === 'advanced') score += 20;
       else if (v === 'intermediate') score += 12;
@@ -229,7 +268,7 @@ const TechnologyHub: React.FC = () => {
       color = 'text-yellow-600';
       recommendations = [
         lang === 'hi' ? 'व्यापक CRM सिस्टम लागू करें' : 'Implement a comprehensive CRM system',
-        lang === 'hi' ? 'ई‑कॉमर्स प्लेटफ़ॉर्म सेट करें' : 'Set up an e-commerce platform',
+        lang === 'hi' ? 'ई-कॉमर्स प्लेटफ़ॉर्म सेट करें' : 'Set up an e-commerce platform',
         lang === 'hi' ? 'डिजिटल पेमेंट प्रोसेसिंग शुरू करें' : 'Digitize payment processing',
       ];
     } else {
@@ -241,8 +280,45 @@ const TechnologyHub: React.FC = () => {
         lang === 'hi' ? 'डिजिटल भुगतान तरीक़े अपनाएँ' : 'Implement digital payment methods',
       ];
     }
+    return { score, level, color, recommendations };
+  };
 
-    setAssessmentResult({ score, level, recommendations, color });
+  const allAnswered = useMemo(
+    () => Object.values(assessmentData).every((v) => !!v),
+    [assessmentData]
+  );
+
+  // Modal state based on thresholds
+  const [showOutcome, setShowOutcome] = useState<boolean>(false);
+  const [outcomeTier, setOutcomeTier] = useState<'low'|'mid'|'high'|'none'>('none');
+
+  // Trigger scoring when on last step and user clicks "Get Score"
+  const handleFinish = () => {
+    const res = computeScore(assessmentData);
+    setAssessmentResult(res);
+
+    // Animate 0 -> target score
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    setAnimatedScore(0);
+    const start = performance.now();
+    const duration = 900; // ms
+
+    const step = (ts: number) => {
+      const p = Math.min(1, (ts - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3); // easeOutCubic
+      const val = Math.round(eased * res.score);
+      setAnimatedScore(val);
+      if (p < 1) {
+        rafRef.current = requestAnimationFrame(step);
+      }
+    };
+    rafRef.current = requestAnimationFrame(step);
+
+    // Decide outcome banner/modal
+    if (res.score < 20) setOutcomeTier('low');
+    else if (res.score <= 60) setOutcomeTier('mid');
+    else setOutcomeTier('high');
+    setShowOutcome(true);
   };
 
   const toggleCategory = (id: string) => setExpandedCategory(expandedCategory === id ? null : id);
@@ -250,27 +326,39 @@ const TechnologyHub: React.FC = () => {
   const fontClass = fontStep === -1 ? 'text-[15px]' : fontStep === 1 ? 'text-[19px]' : 'text-[17px]';
   const theme = contrast ? 'bg-black text-white' : 'bg-slate-50 text-slate-900';
 
-  const RadioBlock: React.FC<{ name: keyof AssessmentData; options: { value: string; label: string }[]; label: string }>
-    = ({ name, options, label }) => (
-      <div>
-        <label className="block text-sm font-medium mb-3">{label}</label>
-        <div className="space-y-2">
-          {options.map((opt) => (
-            <label key={opt.value} className="flex items-center">
-              <input
-                type="radio"
-                name={name}
-                value={opt.value}
-                checked={assessmentData[name] === opt.value}
-                onChange={(e) => setAssessmentData({ ...assessmentData, [name]: e.target.value })}
-                className="mr-3 text-[#0F5BA7] focus:ring-[#0F5BA7]"
-              />
-              <span>{opt.label}</span>
-            </label>
-          ))}
-        </div>
+  const RadioBlock: React.FC<{
+    name: keyof AssessmentData;
+    options: { value: string; label: string }[];
+    label: string;
+  }> = ({ name, options, label }) => (
+    <div>
+      <label className="block text-sm font-medium mb-3">{label}</label>
+      <div className="space-y-2">
+        {options.map((opt) => (
+          <label key={opt.value} className="flex items-center">
+            <input
+              type="radio"
+              name={name}
+              value={opt.value}
+              checked={assessmentData[name] === opt.value}
+              onChange={(e) => setAssessmentData({ ...assessmentData, [name]: e.target.value })}
+              className="mr-3 text-[#0F5BA7] focus:ring-[#0F5BA7]"
+            />
+            <span>{opt.label}</span>
+          </label>
+        ))}
       </div>
-    );
+    </div>
+  );
+
+  // Slider controls
+  const stepPercent = Math.round(((currentStep) / totalQuestions) * 100);
+  const donePercent = Math.round((Object.values(assessmentData).filter(Boolean).length / totalQuestions) * 100);
+
+  // Circle progress ring
+  const CIRC_R = 56; // radius
+  const CIRC_C = 2 * Math.PI * CIRC_R; // circumference
+  const ringOffset = CIRC_C - (animatedScore / 100) * CIRC_C;
 
   return (
     <div className={`min-h-screen ${theme} ${fontClass}`}>
@@ -292,114 +380,224 @@ const TechnologyHub: React.FC = () => {
             <p className="opacity-80">{t('assessSub')}</p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="space-y-6">
-              <RadioBlock
-                name="currentSystems"
-                label={t('q1')}
-                options={[
-                  { value: 'advanced', label: t('q1a') },
-                  { value: 'intermediate', label: t('q1b') },
-                  { value: 'basic', label: t('q1c') },
-                  { value: 'none', label: t('q1d') },
-                ]}
-              />
-
-              <RadioBlock
-                name="digitalPresence"
-                label={t('q2')}
-                options={[
-                  { value: 'advanced', label: t('q2a') },
-                  { value: 'intermediate', label: t('q2b') },
-                  { value: 'basic', label: t('q2c') },
-                  { value: 'none', label: t('q2d') },
-                ]}
-              />
-
-              <RadioBlock
-                name="paymentMethods"
-                label={t('q3')}
-                options={[
-                  { value: 'advanced', label: t('q3a') },
-                  { value: 'intermediate', label: t('q3b') },
-                  { value: 'basic', label: t('q3c') },
-                  { value: 'none', label: t('q3d') },
-                ]}
-              />
-
-              <RadioBlock
-                name="dataManagement"
-                label={t('q4')}
-                options={[
-                  { value: 'advanced', label: t('q4a') },
-                  { value: 'intermediate', label: t('q4b') },
-                  { value: 'basic', label: t('q4c') },
-                  { value: 'none', label: t('q4d') },
-                ]}
-              />
-
-              <RadioBlock
-                name="automation"
-                label={t('q5')}
-                options={[
-                  { value: 'advanced', label: t('q5a') },
-                  { value: 'intermediate', label: t('q5b') },
-                  { value: 'basic', label: t('q5c') },
-                  { value: 'none', label: t('q5d') },
-                ]}
-              />
-
-              <button
-                onClick={calcScore}
-                disabled={Object.values(assessmentData).some((v) => !v)}
-                className="w-full bg-[#138808] hover:bg-green-700 disabled:bg-slate-300 text-white py-3 px-6 rounded-lg font-semibold transition-colors"
-              >
-                {t('btnScore')}
-              </button>
+          {/* Linear progress over questions */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between text-sm mb-2">
+              <span className="font-medium">{t('progress')}</span>
+              <span className="opacity-80">{donePercent}%</span>
             </div>
-
-            <div aria-live="polite">
-              {assessmentResult ? (
-                <div className={`${contrast ? 'bg-zinc-950' : 'bg-gradient-to-br from-blue-50 to-purple-50'} p-6 md:p-8 rounded-xl border-2 border-blue-200 h-full`}>
-                  <div className="text-center mb-6">
-                    <div className="relative inline-block">
-                      <div className="w-32 h-32 rounded-full border-8 ${contrast ? 'border-zinc-800' : 'border-gray-200'} flex items-center justify-center mx-auto mb-4">
-                        <div className={`w-24 h-24 rounded-full ${assessmentResult.color.replace('text-', 'bg-').replace('-600', '-100')} flex items-center justify-center`}>
-                          <span className={`text-3xl font-bold ${assessmentResult.color}`}>{assessmentResult.score}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <h3 className="text-xl md:text-2xl font-bold mb-1">{t('scoreH')}</h3>
-                    <p className={`text-lg font-semibold ${assessmentResult.color}`}>{assessmentResult.level}</p>
-                  </div>
-
-                  <div className={`${contrast ? 'bg-zinc-900' : 'bg-white'} p-6 rounded-lg shadow-sm border`}>
-                    <h4 className="font-semibold mb-3">{t('nextSteps')}</h4>
-                    <ul className="space-y-3">
-                      {assessmentResult.recommendations.map((rec, idx) => (
-                        <li key={idx} className="flex items-start gap-3">
-                          <CheckCircle className="h-5 w-5 text-[#138808] mt-0.5" />
-                          <span>{rec}</span>
-                        </li>
-                      ))}
-                    </ul>
-
-                    <div className="mt-6 pt-6 border-t text-center">
-                      <Star className="h-7 w-7 text-amber-400 mx-auto mb-2" />
-                      <p className="text-sm opacity-80">{lang === 'hi' ? 'अगला कदम उठाने के लिए नीचे दिए समाधान देखें।' : 'Ready to take the next step? Explore solutions below.'}</p>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className={`${contrast ? 'bg-zinc-900' : 'bg-slate-100'} p-8 rounded-xl h-full grid place-items-center`}>
-                  <div className="text-center">
-                    <Monitor className={`h-14 w-14 ${contrast ? 'text-slate-500' : 'text-slate-400'} mx-auto mb-3`} />
-                    <p className="opacity-80">{t('completePrompt')}</p>
-                  </div>
-                </div>
-              )}
+            <div className={`${contrast ? 'bg-zinc-800' : 'bg-slate-200'} h-2 rounded`}>
+              <div
+                className="h-2 rounded bg-[#138808] transition-all"
+                style={{ width: `${donePercent}%` }}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={donePercent}
+                role="progressbar"
+              />
             </div>
           </div>
+
+          {/* Slider: show one question at a time until finished */}
+          {!assessmentResult ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Left: Question slider */}
+              <div className="space-y-6">
+                {currentStep === 0 && (
+                  <RadioBlock
+                    name="currentSystems"
+                    label={t('q1')}
+                    options={[
+                      { value: 'advanced', label: t('q1a') },
+                      { value: 'intermediate', label: t('q1b') },
+                      { value: 'basic', label: t('q1c') },
+                      { value: 'none', label: t('q1d') },
+                    ]}
+                  />
+                )}
+                {currentStep === 1 && (
+                  <RadioBlock
+                    name="digitalPresence"
+                    label={t('q2')}
+                    options={[
+                      { value: 'advanced', label: t('q2a') },
+                      { value: 'intermediate', label: t('q2b') },
+                      { value: 'basic', label: t('q2c') },
+                      { value: 'none', label: t('q2d') },
+                    ]}
+                  />
+                )}
+                {currentStep === 2 && (
+                  <RadioBlock
+                    name="paymentMethods"
+                    label={t('q3')}
+                    options={[
+                      { value: 'advanced', label: t('q3a') },
+                      { value: 'intermediate', label: t('q3b') },
+                      { value: 'basic', label: t('q3c') },
+                      { value: 'none', label: t('q3d') },
+                    ]}
+                  />
+                )}
+                {currentStep === 3 && (
+                  <RadioBlock
+                    name="dataManagement"
+                    label={t('q4')}
+                    options={[
+                      { value: 'advanced', label: t('q4a') },
+                      { value: 'intermediate', label: t('q4b') },
+                      { value: 'basic', label: t('q4c') },
+                      { value: 'none', label: t('q4d') },
+                    ]}
+                  />
+                )}
+                {currentStep === 4 && (
+                  <RadioBlock
+                    name="automation"
+                    label={t('q5')}
+                    options={[
+                      { value: 'advanced', label: t('q5a') },
+                      { value: 'intermediate', label: t('q5b') },
+                      { value: 'basic', label: t('q5c') },
+                      { value: 'none', label: t('q5d') },
+                    ]}
+                  />
+                )}
+
+                {/* Slider controls */}
+                <div className="flex items-center justify-between gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep((s) => Math.max(0, s - 1))}
+                    disabled={currentStep === 0}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border font-semibold disabled:opacity-50"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    {t('btnBack')}
+                  </button>
+
+                  {currentStep < totalQuestions - 1 ? (
+                    <button
+                      type="button"
+                      onClick={() => setCurrentStep((s) => Math.min(totalQuestions - 1, s + 1))}
+                      disabled={!assessmentData[questionKeys[currentStep]]}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#138808] text-white font-semibold disabled:bg-slate-300"
+                    >
+                      {t('btnNext')}
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleFinish}
+                      disabled={!allAnswered}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#138808] text-white font-semibold disabled:bg-slate-300"
+                    >
+                      {t('btnScore')}
+                    </button>
+                  )}
+                </div>
+
+                {/* Step indicator mini bar */}
+                <div className="mt-4">
+                  <div className={`${contrast ? 'bg-zinc-800' : 'bg-slate-200'} h-1 rounded`}>
+                    <div
+                      className="h-1 rounded bg-[#0F5BA7] transition-all"
+                      style={{ width: `${Math.min(100, Math.round(((currentStep + 1) / totalQuestions) * 100))}%` }}
+                    />
+                  </div>
+                  <div className="text-xs opacity-70 mt-1">
+                    {currentStep + 1} / {totalQuestions}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Placeholder/Hint */}
+              <div className={`${contrast ? 'bg-zinc-900' : 'bg-slate-100'} p-8 rounded-xl h-full grid place-items-center`}>
+                <div className="text-center">
+                  <Monitor className={`h-14 w-14 ${contrast ? 'text-slate-500' : 'text-slate-400'} mx-auto mb-3`} />
+                  <p className="opacity-80">{t('completePrompt')}</p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            // Result with animated ring
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8" aria-live="polite">
+              <div className={`${contrast ? 'bg-zinc-950' : 'bg-gradient-to-br from-blue-50 to-purple-50'} p-6 md:p-8 rounded-xl border-2 border-blue-200 h-full`}>
+                <div className="text-center mb-6">
+                  <div className="relative inline-block">
+                    {/* Outer ring container */}
+                    <svg width="160" height="160" className="mx-auto mb-4" role="img" aria-label={`${animatedScore} / 100`}>
+                      {/* Background circle */}
+                      <circle
+                        cx="80" cy="80" r={CIRC_R}
+                        stroke={contrast ? '#27272a' : '#e5e7eb'}
+                        strokeWidth="12"
+                        fill="none"
+                      />
+                      {/* Progress ring */}
+                      <circle
+                        cx="80" cy="80" r={CIRC_R}
+                        stroke="#0F5BA7"
+                        strokeWidth="12"
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeDasharray={CIRC_C}
+                        strokeDashoffset={ringOffset}
+                        transform="rotate(-90 80 80)"
+                        className="transition-[stroke-dashoffset] duration-200"
+                      />
+                      {/* Inner solid circle to show score & color aura */}
+                      <circle
+                        cx="80" cy="80" r="44"
+                        fill={assessmentResult!.color.includes('green') ? '#dcfce7'
+                          : assessmentResult!.color.includes('blue') ? '#dbeafe'
+                          : assessmentResult!.color.includes('yellow') ? '#fef9c3'
+                          : '#fee2e2'}
+                      />
+                      <text x="80" y="86" textAnchor="middle" fontSize="28" fontWeight="700"
+                        fill={assessmentResult!.color.includes('green') ? '#16a34a'
+                          : assessmentResult!.color.includes('blue') ? '#2563eb'
+                          : assessmentResult!.color.includes('yellow') ? '#ca8a04'
+                          : '#dc2626'}>
+                        {animatedScore}
+                      </text>
+                    </svg>
+                  </div>
+                  <h3 className="text-xl md:text-2xl font-bold mb-1">{t('scoreH')}</h3>
+                  <p className={`text-lg font-semibold ${assessmentResult!.color}`}>{assessmentResult!.level}</p>
+                </div>
+
+                <div className={`${contrast ? 'bg-zinc-900' : 'bg-white'} p-6 rounded-lg shadow-sm border`}>
+                  <h4 className="font-semibold mb-3">{t('nextSteps')}</h4>
+                  <ul className="space-y-3">
+                    {assessmentResult!.recommendations.map((rec, idx) => (
+                      <li key={idx} className="flex items-start gap-3">
+                        <CheckCircle className="h-5 w-5 text-[#138808] mt-0.5" />
+                        <span>{rec}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div className="mt-6 pt-6 border-t text-center">
+                    <Star className="h-7 w-7 text-amber-400 mx-auto mb-2" />
+                    <p className="text-sm opacity-80">{lang === 'hi' ? 'अगला कदम उठाने के लिए नीचे दिए समाधान देखें।' : 'Ready to take the next step? Explore solutions below.'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Summary of answers */}
+              <div className={`${contrast ? 'bg-zinc-900' : 'bg-white'} p-6 md:p-8 rounded-xl border h-full`}>
+                <h4 className="text-lg font-bold mb-4">Summary</h4>
+                <ul className="space-y-2 text-sm opacity-90">
+                  <li><span className="font-semibold">Q1:</span> {assessmentData.currentSystems || '-'}</li>
+                  <li><span className="font-semibold">Q2:</span> {assessmentData.digitalPresence || '-'}</li>
+                  <li><span className="font-semibold">Q3:</span> {assessmentData.paymentMethods || '-'}</li>
+                  <li><span className="font-semibold">Q4:</span> {assessmentData.dataManagement || '-'}</li>
+                  <li><span className="font-semibold">Q5:</span> {assessmentData.automation || '-'}</li>
+                </ul>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* Technology Solutions */}
@@ -459,6 +657,55 @@ const TechnologyHub: React.FC = () => {
           </div>
         </section>
       </div>
+
+      {/* Outcome Modal */}
+      {showOutcome && assessmentResult && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowOutcome(false)} />
+          <div className={`${contrast ? 'bg-zinc-900 text-white' : 'bg-white text-slate-900'} relative z-[61] w-[95%] max-w-md rounded-2xl shadow-xl border p-6`}>
+            <button
+              aria-label={t('close')}
+              className="absolute right-3 top-3 p-2 rounded hover:bg-slate-100 text-slate-600"
+              onClick={() => setShowOutcome(false)}
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            {outcomeTier === 'low' && (
+              <>
+                <h3 className="text-xl font-bold mb-2">{t('modalLowH')}</h3>
+                <p className="opacity-80 mb-5">{t('modalLowB')}</p>
+                <div className="flex gap-3">
+                  <a href="/clusters" className="px-4 py-2 rounded-lg bg-[#0F5BA7] text-white font-semibold">{t('modalFindCenter')}</a>
+                  <button className="px-4 py-2 rounded-lg border font-semibold" onClick={() => setShowOutcome(false)}>{t('close')}</button>
+                </div>
+              </>
+            )}
+
+            {outcomeTier === 'mid' && (
+              <>
+                <h3 className="text-xl font-bold mb-2">{t('modalMidH')}</h3>
+                <p className="opacity-80 mb-5">{t('modalMidB')}</p>
+                <div className="flex gap-3">
+                  <a href="/udyam" className="px-4 py-2 rounded-lg bg-[#138808] text-white font-semibold">{t('modalStartGuided')}</a>
+                  <button className="px-4 py-2 rounded-lg border font-semibold" onClick={() => setShowOutcome(false)}>{t('close')}</button>
+                </div>
+              </>
+            )}
+
+            {outcomeTier === 'high' && (
+              <>
+                <h3 className="text-xl font-bold mb-2">{t('modalHighH')}</h3>
+                <p className="opacity-80 mb-5">{t('modalHighB')}</p>
+                <div className="flex gap-3">
+                  <a href="/journey" className="px-4 py-2 rounded-lg bg-[#0F5BA7] text-white font-semibold">{t('modalContinue')}</a>
+                  <button className="px-4 py-2 rounded-lg border font-semibold" onClick={() => setShowOutcome(false)}>{t('close')}</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

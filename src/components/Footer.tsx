@@ -23,12 +23,12 @@ interface FooterProps {
 }
 
 const Footer: React.FC<FooterProps> = ({
-  orgName = 'Delhi MSME Ascend',
-  email = 'info@delhimsmeascend.gov.in',
+  orgName = 'Saksham',
+  email = 'info@saksham.gov.in',
   phone = '+91-11-2345-6789',
   address = 'Delhi Secretariat, New Delhi',
   wimEmail = 'protowim@demo.gov',
-  ownedBy = 'Prototype Team (Ideathon)',
+  ownedBy = 'Oldman Sachs (Ideathon)',
   lastUpdated,
   showInitiativeLogos = true,
 }) => {

@@ -1,22 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Building2, Search, Languages, Contrast, Minus, Plus } from 'lucide-react';
+import { Menu, X, Search, Languages, Contrast, Minus, Plus } from 'lucide-react';
 
-// ---------------------------------------------------------------------------
-// Navbar (GoI / Samarth / S3WaaS-inspired)
-// - Bilingual toggle, A-/A/A+, High-contrast utilities (optional)
-// - Tricolour accent bar, simple search, active-link styles
-// - Avoid using restricted emblems. Use your brand text only.
-// - You can pass your Make in India / Digital India logos in the header area of the page
-//   OR keep them in a separate header component to avoid duplication with Homepage.
-// ---------------------------------------------------------------------------
+import sakshamLogo from '../assets/saksham-logo.png';
+import satyamevLogo from '../assets/satyamev-jayate.png';
 
 export interface NavbarProps {
-  showUtilities?: boolean; // show language/contrast/font size utilities
-  brandText?: string; // defaults to 'Saksham'
+  showUtilities?: boolean;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ showUtilities = true, brandText = 'Saksham' }) => {
+const Navbar: React.FC<NavbarProps> = ({ showUtilities = true }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [lang, setLang] = useState<'en' | 'hi'>('en');
   const [contrast, setContrast] = useState(false);
@@ -35,7 +28,6 @@ const Navbar: React.FC<NavbarProps> = ({ showUtilities = true, brandText = 'Saks
     { name: 'Contact', path: '/contact' },
   ];
 
-  // (Optional) broadcast UI prefs so pages can listen if needed
   useEffect(() => {
     window.dispatchEvent(new CustomEvent('gov-ui:font-step', { detail: { fontStep } }));
   }, [fontStep]);
@@ -45,8 +37,6 @@ const Navbar: React.FC<NavbarProps> = ({ showUtilities = true, brandText = 'Saks
   useEffect(() => {
     window.dispatchEvent(new CustomEvent('gov-ui:lang', { detail: { lang } }));
   }, [lang]);
-
-  const fontLabel = fontStep === -1 ? 'A-' : fontStep === 1 ? 'A+' : 'A';
 
   return (
     <nav className="bg-white border-b sticky top-0 z-50">
@@ -106,19 +96,32 @@ const Navbar: React.FC<NavbarProps> = ({ showUtilities = true, brandText = 'Saks
       )}
 
       {/* Main bar */}
-      <div className={`${contrast ? 'bg-black' : 'bg-white'} `}>
+      <div className={`${contrast ? 'bg-black' : 'bg-white'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-14">
+          {/* TALLER: h-20 (80px) on mobile, h-24 (96px) on md+ */}
+          <div className="flex justify-between h-20 md:h-24">
             {/* Brand */}
             <div className="flex items-center">
-              <Link to="/" className="flex items-center gap-2">
-                <Building2 className="h-6 w-6 text-[#0F5BA7]" aria-hidden="true" />
-                <span className="font-bold text-xl text-slate-900">{brandText}</span>
+              <Link to="/" className="flex items-center gap-2 md:gap-3" aria-label="Home">
+                {/* LEFT — Satyamev Jayate (kept modest) */}
+                <img
+                  src={satyamevLogo}
+                  alt={lang === 'en' ? 'Satyamev Jayate' : 'सत्यमेव जयते'}
+                  className="h-10 w-auto md:h-12 object-contain select-none shrink-0"
+                  draggable={false}
+                />
+                {/* RIGHT — Saksham (significantly larger) */}
+                <img
+                  src={sakshamLogo}
+                  alt="Saksham"
+                  className="h-16 w-auto md:h-20 object-contain select-none shrink-0 -my-1 md:-my-2"
+                  draggable={false}
+                />
               </Link>
             </div>
 
-            {/* Desktop Menu */}
-            <div className="hidden md:flex items-center gap-1 lg:gap-2">
+            {/* Desktop Menu — slightly tighter spacing */}
+            <div className="hidden md:flex items-center gap-1">
               {navItems.map((item) => {
                 const active = location.pathname === item.path;
                 return (
@@ -126,7 +129,7 @@ const Navbar: React.FC<NavbarProps> = ({ showUtilities = true, brandText = 'Saks
                     key={item.name}
                     to={item.path}
                     aria-current={active ? 'page' : undefined}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-blue-200 ${
+                    className={`px-2.5 py-2 rounded-md text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-blue-200 ${
                       active
                         ? 'text-[#0F5BA7] bg-blue-50'
                         : 'text-slate-700 hover:text-[#0F5BA7] hover:bg-slate-50'
@@ -137,8 +140,8 @@ const Navbar: React.FC<NavbarProps> = ({ showUtilities = true, brandText = 'Saks
                 );
               })}
 
-              {/* Search */}
-              <div className="hidden lg:flex items-center bg-slate-100 rounded-lg px-2 py-1 ml-2 focus-within:ring focus-within:ring-blue-200">
+              {/* Search (tighter left margin) */}
+              <div className="hidden lg:flex items-center bg-slate-100 rounded-lg px-2 py-1 ml-1 focus-within:ring focus-within:ring-blue-200">
                 <Search size={16} className="opacity-60" />
                 <input
                   aria-label="Search"

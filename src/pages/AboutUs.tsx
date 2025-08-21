@@ -44,7 +44,7 @@ const AboutUs: React.FC = () => {
         ></div>
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
           <div className="text-white">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">About Delhi MSME Ascend</h1>
+            <h1 className="text-4xl md:text-6xl font-bold mb-6">About Saksham</h1>
             <p className="text-xl md:text-2xl opacity-90 max-w-3xl">
               Transforming the MSME landscape through innovative technology, strategic partnerships, and unwavering commitment to growth.
             </p>

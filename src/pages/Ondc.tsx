@@ -150,6 +150,9 @@ const ONDCAcademy: React.FC = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
+  // --- YouTube embed URL (compact player)
+  const embedUrl = "https://www.youtube.com/embed/omIVkOWt82U?rel=0&modestbranding=1";
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero */}
@@ -190,6 +193,26 @@ const ONDCAcademy: React.FC = () => {
           </div>
         </div>
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent" />
+      </section>
+
+      {/* Embedded YouTube (compact) */}
+      <section className="bg-white py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="rounded-2xl border shadow overflow-hidden">
+            {/* responsive 16:9 wrapper without aspect plugin */}
+            <div className="relative w-full h-0 pb-[56.25%]">
+              <iframe
+                className="absolute inset-0 w-full h-full"
+                src={embedUrl}
+                title="ONDC Overview"
+                loading="lazy"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+                allowFullScreen
+              />
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* How it plugs into your site */}

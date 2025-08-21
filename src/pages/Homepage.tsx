@@ -8,23 +8,24 @@ import {
   Star,
   ChevronLeft,
   ChevronRight,
+  Gauge,
+  X,
 } from 'lucide-react';
 import MAKE_IN_INDIA_LOGO from '../assets/make-in-india-seeklogo.png';
 import DIGITAL_INDIA_LOGO from '../assets/digital-india.svg';
-// ---------------------------------------------------------------------------
-// Homepage (fits GoI-style Navbar; NO footer here)
-// - Listens to Navbar events: gov-ui:lang / gov-ui:contrast / gov-ui:font-step
-// - No page-level utility bar or header (Navbar handles that)
-// - Hero → Quick links → How it works → Success Stories → Partners
-// - Slim initiatives strip (Make in India / Digital India) under hero
-// ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Homepage
+// - Slide-in Digital Readiness Test prompt (dismissible; remembers via localStorage)
+// - Removed Satyamev Jayate + Saksham logo strip from hero
+// ---------------------------------------------------------------------------
 
 const Homepage: React.FC = () => {
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [lang, setLang] = useState<'en' | 'hi'>('en');
   const [contrast, setContrast] = useState(false);
-  const [fontStep, setFontStep] = useState<-1 | 0 | 1>(0); // -1, 0, +1
+  const [fontStep, setFontStep] = useState<-1 | 0 | 1>(0);
+  const [showTestPrompt, setShowTestPrompt] = useState(false);
 
   const testimonials = [
     {
@@ -64,7 +65,6 @@ const Homepage: React.FC = () => {
     'Razorpay',
   ];
 
-  // Auto-advance testimonials
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
@@ -72,7 +72,6 @@ const Homepage: React.FC = () => {
     return () => clearInterval(timer);
   }, [testimonials.length]);
 
-  // Simple on-view animations
   useEffect(() => {
     const observerCallback = (entries: IntersectionObserverEntry[]) => {
       entries.forEach((entry) => {
@@ -84,7 +83,6 @@ const Homepage: React.FC = () => {
     return () => observer.disconnect();
   }, []);
 
-  // Listen to Navbar-broadcasted UI prefs (safe if Navbar isn't sending)
   useEffect(() => {
     const onFont = (e: any) => setFontStep(e.detail?.fontStep ?? 0);
     const onContrast = (e: any) => setContrast(!!e.detail?.contrast);
@@ -98,6 +96,19 @@ const Homepage: React.FC = () => {
       window.removeEventListener('gov-ui:lang', onLang as EventListener);
     };
   }, []);
+
+  useEffect(() => {
+    const dismissed = localStorage.getItem('dismissTechPrompt') === '1';
+    if (!dismissed) {
+      const id = setTimeout(() => setShowTestPrompt(true), 900);
+      return () => clearTimeout(id);
+    }
+  }, []);
+
+  const closePrompt = () => {
+    setShowTestPrompt(false);
+    localStorage.setItem('dismissTechPrompt', '1');
+  };
 
   const t = (k: string) => {
     const dict: Record<string, Record<string, string>> = {
@@ -129,6 +140,9 @@ const Homepage: React.FC = () => {
         partnersSub:
           'Trusted by leading financial institutions, corporations and technology providers',
         initiatives: 'National initiatives',
+        promptH: 'Digital Readiness Test',
+        promptP: 'Takes ~1 minute. Get your score & next steps.',
+        promptCTA: 'Start Now',
       },
       hi: {
         heroTitle1: 'दिल्ली के एमएसएमई सशक्तिकरण:',
@@ -155,6 +169,9 @@ const Homepage: React.FC = () => {
         partnersTitle: 'हमारे भागीदार',
         partnersSub: 'अग्रणी वित्तीय संस्थान, निगम और प्रौद्योगिकी प्रदाता',
         initiatives: 'राष्ट्रीय पहल',
+        promptH: 'डिजिटल रेडीनेस टेस्ट',
+        promptP: 'लगभग 1 मिनट। स्कोर और अगले कदम पाएं।',
+        promptCTA: 'शुरू करें',
       },
     };
     return dict[lang][k];
@@ -173,6 +190,8 @@ const Homepage: React.FC = () => {
         } border-b`}
       >
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 md:py-20 text-center">
+          {/* (logos removed as requested) */}
+
           <h2 className="text-4xl md:text-5xl font-extrabold mb-4 leading-tight">
             {t('heroTitle1')}
             <br />
@@ -205,7 +224,7 @@ const Homepage: React.FC = () => {
             </Link>
           </div>
 
-          {/* Quick Links to National Platforms */}
+          {/* Quick Links */}
           <div className="mt-10">
             <h3 className="text-lg font-semibold mb-3">{t('quickLinks')}</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl mx-auto">
@@ -355,7 +374,7 @@ const Homepage: React.FC = () => {
         <section className={`${contrast ? 'bg-black' : 'bg-slate-50'} py-12 md:py-16`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-8 md:mb-12">
-              <h2 className="text-2xl md:text-3xl font-bold mb-2">{t('partnersTitle')}</h2>
+              <h2 className="text-2xl md:3xl font-bold mb-2">{t('partnersTitle')}</h2>
               <p className="text-sm md:text-lg opacity-80">{t('partnersSub')}</p>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
@@ -375,6 +394,60 @@ const Homepage: React.FC = () => {
           </div>
         </section>
       </main>
+
+      {/* Slide-in: Digital Readiness Test prompt */}
+      {showTestPrompt && (
+        <div className="fixed z-50 right-4 bottom-4 md:right-6 md:bottom-6">
+          <div
+            className={`${
+              contrast
+                ? 'bg-zinc-900 text-white border border-zinc-700'
+                : 'bg-white text-slate-900 border shadow-xl'
+            } w-80 max-w-[90vw] rounded-2xl p-4 transition-all duration-300 translate-y-0 opacity-100`}
+            role="dialog"
+            aria-labelledby="drt-title"
+          >
+            <div className="flex items-start gap-3">
+              <div className="shrink-0 rounded-lg p-2 bg-blue-600 text-white">
+                <Gauge className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <div className="flex-1">
+                <h4 id="drt-title" className="font-semibold">
+                  {t('promptH')}
+                </h4>
+                <p className="text-sm opacity-80">{t('promptP')}</p>
+                <div className="mt-3 flex gap-2">
+                  <Link
+                    to="/technology#assessment"
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-[#138808] hover:bg-green-700 text-white text-sm font-semibold"
+                    onClick={closePrompt}
+                  >
+                    {t('promptCTA')}
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  <button
+                    className={`px-3 py-2 rounded-md text-sm font-semibold ${
+                      contrast ? 'bg-zinc-800 hover:bg-zinc-700' : 'bg-slate-100 hover:bg-slate-200'
+                    }`}
+                    onClick={closePrompt}
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+              <button
+                className={`p-1 rounded-md ${
+                  contrast ? 'hover:bg-zinc-800' : 'hover:bg-slate-100'
+                }`}
+                onClick={closePrompt}
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
